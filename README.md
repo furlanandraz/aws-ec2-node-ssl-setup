@@ -14,7 +14,7 @@ A walkthrough of EC2 instance launch, node install, nginx and certbot with cron 
 | 443   | HTTPS       | 0.0.0.0/0   |
 | 3000  | Custom TCP  | 0.0.0.0/0   |
    
-      \* Port 3000 will be used only for testing purposes and must be removed in production.
+\* Port 3000 will be used only for testing purposes and must be removed in production.
 
 #### 3. Download the key.pem key and move it to a safe directory
   * Give the key a meaningful name so that you can easily associate it with a specific instance
@@ -59,7 +59,27 @@ sudo apt update
 sudo apt upgrade
 ```
 
-#### 8. Install Node.js via NVM
+#### 8. Install Node.js via NVM (Node Version Manager)
+* Navigate to [Node Package Manager](https://nodejs.org/en/download/package-manager)
+* Select: Install Node.js on <kbd>LTS</kbd> on <kbd>Linux</kbd> using <kbd>nvm</kbd>
+* Follow the bash commands provided
+
+\* NVM allows for Node.js version control.
+
+#### 9. Connect instance to github via SSH
+\* Assuming there is a github repository with your Node.js project that you want to run.
+* Create a new public key on your instance (rsa or other guthub supported key type) and confirm the default config that is prompted:
+```bash
+ssh key gen -t rsa
+```
+* This command outputs the key in `~/.ssh/`
+* Open the key file and copy the record from the key to your **clipboard** (key name my differ based on key type you generted)
+```bash
+cat ~/.ssh/id_rsa.pub
+```
+* On github go to <kbd>Profile</kbd> &rarr; <kbd>Settings</kbd> &rarr; <kbd>SSH and GPG keys</kbd> &rarr; <kbd>Add New SSH key</kbd>
+   - Key type: Authentication Key
+   - Key: paste from **clipboard**
  
 
 
