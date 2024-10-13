@@ -154,6 +154,7 @@ sudo chown ubuntu:ubuntu /etc/app.env
 This file keeps your app runing and restarts it at reboot
 * In this scenario `npm` scripts are not accessible, so run your enty point with `node` command - this is due to using nvm
 * to find your node path for ExecStart, run
+* Custom logs can be simply replaced with `syslog`
 
 ```bash
 which node
@@ -186,9 +187,27 @@ Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
-````
+```
 
-#### 13. Run the systemd service file
+* If you are using cutom logs create the files
+
+```bash
+sudo mkdir -p /var/log/app
+```
+
+```bash
+touch /var/log/app/output.log error.log
+```
+
+```bash
+sudo chown -R ubuntu:ubuntu /var/log/app
+```
+
+```bash
+sudo chmod -R 664 /var/log/app
+```
+
+#### 14. Run the systemd service file
 
 ```bash
 sudo systemctl daemon-reload
@@ -208,3 +227,145 @@ sudo systemctl start app.service
 sudo journalctl -n app.service
 ```
 
+#### 14. Reverse proxy with nginx and free SSL with certbot
+
+* Check for python and install if missing
+
+```bash
+python3 --version
+```
+
+```bash
+sudo apt install python3
+```
+
+* Intall cerbot and nginx
+
+```bash
+sudo apt install certbot python-certbot-nginx
+```
+
+```bash
+sudo apt install nginx
+```
+
+* Start nginx
+
+```bash
+sudo systemctl start nginx
+```
+
+```bash
+sudo systemctl enable nginx
+```
+
+* Create an edit nginx server block file
+
+```bash
+sudo touch /etc/nginx/sites/available/<your_app_name>
+```
+
+```bash
+sudo vim /etc/nginx/sites/available/<your_app_name>
+```
+
+* The following code is for HTTP (80) server block. Cerbot will automatically create HTTPS (443) server block to secure and redirect traffic from HTTP 
+
+```text
+server {
+   
+   listen: 80;
+   server_name <your_domain> www.<your_domain>;
+   
+   # Deny access to .env, logs, .git, json
+   location ~ /\.(env|git|log|json) {
+     deny all;
+   }
+   
+   location / {
+     proxy_pass http://localhost:3000;  # Your Node.js app running on port 3000
+     proxy_http_version 1.1;
+     proxy_set_header Upgrade $http_upgrade;
+     proxy_set_header Connection 'upgrade';
+     proxy_set_header Host $host;
+     proxy_cache_bypass $http_upgrade;
+   }
+
+}
+```
+\* This file will be changed and formatted after interaction with certbot. Watchfully change it's contents after that.
+
+* Create a symbolic link
+
+```bash
+sudo ln -s /etc/nginx/sites-available/<your_app_name> /etc/nginx/sites-enabled/
+```
+
+* Test nginx config
+
+```bash
+sudo nginx -t
+```
+
+* Run certbot with nginx. Cerbot will use the provided domain to search and target nginx server blocks
+
+```bash
+sudo certbot --nginx -d <your_domain> www.<your_domain>
+```
+
+* Previous command updates you server block file, so run the test again
+
+```bash
+sudo nginx -t
+```
+
+* Due to changes, restart the service
+
+```bash
+sudo systemctl restart nginx
+```
+
+* Check firewall settings
+
+```bash
+sudo ufw status verbose
+```
+\* This should output `inactive`. Access through ports is handled in EC2 security group.
+
+#### 16. Cerbot cron
+
+* For a dedicated cronjob log (optoinal)
+
+```bash
+sudo mkdir /var/log/cronjob
+```
+
+```bash
+sudo touch /var/log/cronjob/certbot-renew.log
+```
+
+```bash
+sudo chown -R ubuntu:ubuntu /var/log/cronjob/
+```
+
+```bash
+sudo chmod -R 664 /var/log/cronjob/
+```
+
+* Open the crontab for editing. This command might prompt you to choose a default editor for crontab (can be chaged with `select-editor`)
+
+```bash
+sudo crontab -e
+```
+
+* Set the interval and the command to be run without specified log
+
+```text
+0 0 * * * /usr/bin/cerbot renew --quiet --post-hook "systemctl reload nginx"
+```
+
+or with specified log - stderr (2) are redirected to stdout (1)
+
+```text
+0 0 * * * /usr/bin/cerbot renew --quiet --post-hook "systemctl reload nginx" >> /var/log/cronjob/certbot-renew.log 2>&1
+```
