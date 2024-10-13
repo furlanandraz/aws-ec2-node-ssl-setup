@@ -369,3 +369,21 @@ or with specified log - stderr (2) are redirected to stdout (1)
 ```text
 0 0 * * * /usr/bin/cerbot renew --quiet --post-hook "systemctl reload nginx" >> /var/log/cronjob/certbot-renew.log 2>&1
 ```
+
+#### 17. Logs cron
+
+```bash
+sudo mkdir ~/scripts
+```
+
+```bash
+sudo touch ~/scripts/send_logs.sh
+```
+
+```bash
+tar -czf /var/log/backup/logs-[timestamp].tar.gz /var/log/app /var/log/cronjob
+mail -s "Monthly logs"andraz.furlan98@gmail.com < /var/log/backup/logs-[timestamp].tar.gz
+```
+
+```bash
+mail -s "Monthly logs
