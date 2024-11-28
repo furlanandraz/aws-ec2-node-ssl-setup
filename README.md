@@ -262,11 +262,11 @@ sudo systemctl enable nginx
 * Create an edit nginx server block file
 
 ```bash
-sudo touch /etc/nginx/sites/available/<your_app_name>
+sudo touch /etc/nginx/sites-available/<your_app_name>
 ```
 
 ```bash
-sudo vim /etc/nginx/sites/available/<your_app_name>
+sudo vim /etc/nginx/sites-available/<your_app_name>
 ```
 
 * The following code is for HTTP (80) server block. Cerbot will automatically create HTTPS (443) server block to secure and redirect traffic from HTTP 
